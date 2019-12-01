@@ -18,4 +18,13 @@ let getRequiredTotalFuel moduleMass =
             None)
     |> Seq.sum
 
+let getRequiredTotalFuel2 moduleMass =
+    let rec loop acc mass =
+        let additionalFuel = getRequiredFuel mass
+        if additionalFuel > 0 then
+            loop (acc + additionalFuel) additionalFuel
+        else
+            acc
+    loop 0 moduleMass
+
 let result2 = moduleMasses |> Array.sumBy getRequiredTotalFuel
