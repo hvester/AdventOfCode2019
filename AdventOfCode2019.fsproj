@@ -9,5 +9,6 @@
     <Compile Include="Day3.fsx" />
     <Compile Include="Day4.fsx" />
     <Compile Include="Day5.fsx" />
+    <Compile Include="CheckAll.fsx" />
   </ItemGroup>
 </Project>
