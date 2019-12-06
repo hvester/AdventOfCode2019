@@ -7,7 +7,13 @@ type Parameter = ParameterMode * int
 type Instruction =
     | Add of Parameter * Parameter * int 
     | Multiply of Parameter * Parameter * int
+    | Input of int
+    | Output of Parameter
     | Halt
+
+type IO =
+    abstract Input : unit -> int
+    abstract Output : int -> unit
 
 let getOpCode value = value % 100
 
@@ -28,6 +34,8 @@ let readInstruction (memory : int array) instructionPointer =
     match getOpCode firstValue with
     | 1 -> Add (getParameter 1, getParameter 2, getParameterValue 3)
     | 2 -> Multiply (getParameter 1, getParameter 2, getParameterValue 3)
+    | 3 -> Input (getParameterValue 1)
+    | 4 -> Output (getParameter 1)
     | 99 -> Halt
     | _ -> failwith "Invalid op code" 
 
@@ -35,6 +43,7 @@ let getNewInstructionPointer instruction instructionPointer =
     let shift =
         match instruction with
         | Add _ | Multiply _ -> 4
+        | Input _ | Output _ -> 2
         | Halt _ -> 1
     instructionPointer + shift
 
@@ -43,7 +52,7 @@ let resolveParameter (memory : int array) parameter =
     | PositionMode, position -> memory.[position]
     | ImmediateMode, value -> value
 
-let executeInstruction memory instruction =
+let executeInstruction memory (io : IO) instruction =
     match instruction with
     | Add (parameter1, parameter2, outputPosition) ->
         let value1 = resolveParameter memory parameter1
@@ -53,17 +62,22 @@ let executeInstruction memory instruction =
         let value1 = resolveParameter memory parameter1
         let value2 = resolveParameter memory parameter2
         memory.[outputPosition] <- value1 * value2
+    | Input position ->
+        memory.[position] <- io.Input ()
+    | Output parameter ->
+        let value = resolveParameter memory parameter
+        io.Output value
     | Halt ->
         ()
     match instruction with | Halt -> true | _ -> false
 
-let runProgram program input1 input2 =
+let runProgram program io argument1 argument2 =
     let memory = Array.copy program
-    memory.[1] <- input1
-    memory.[2] <- input2
+    argument1 |> Option.iter (fun v -> memory.[1] <- v)
+    argument2 |> Option.iter (fun v -> memory.[2] <- v)
     let rec loop instructionPointer =
         let instruction = readInstruction memory instructionPointer
-        match executeInstruction memory instruction with
+        match executeInstruction memory io instruction with
         | true ->
             memory
         | false -> 

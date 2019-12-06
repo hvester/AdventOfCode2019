@@ -8,7 +8,9 @@ let inputProgram =
     File.ReadAllText("data/input2.txt").Split([|','|])
     |> Array.map int
 
-let result1 = runProgram inputProgram 12 2 |> Array.item 0 // 3716250
+let io = Unchecked.defaultof<IO>
+
+let result1 = runProgram inputProgram io (Some 12) (Some 2) |> Array.item 0 // 3716250
 
 let verb, noun =
     seq {
@@ -17,6 +19,6 @@ let verb, noun =
                 yield (input1, input2)
     }
     |> Seq.find (fun (input1, input2) ->
-        (runProgram inputProgram input1 input2).[0] = 19690720)
+        (runProgram inputProgram io (Some input1) (Some input2)).[0] = 19690720)
 
 let result2 = 100 * verb + noun // 6472
