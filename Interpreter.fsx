@@ -9,6 +9,10 @@ type Instruction =
     | Multiply of Parameter * Parameter * int
     | Input of int
     | Output of Parameter
+    | JumpIfTrue of Parameter * Parameter
+    | JumpIfFalse of Parameter * Parameter
+    | LessThan of Parameter * Parameter * int
+    | Equals of Parameter * Parameter * int
     | Halt
 
 type IO =
@@ -36,6 +40,10 @@ let readInstruction (memory : int array) ptr =
     | 2 -> Multiply (getParameter 1, getParameter 2, getParameterValue 3)
     | 3 -> Input (getParameterValue 1)
     | 4 -> Output (getParameter 1)
+    | 5 -> JumpIfTrue (getParameter 1, getParameter 2)
+    | 6 -> JumpIfFalse (getParameter 1, getParameter 2)
+    | 7 -> LessThan (getParameter 1, getParameter 2, getParameterValue 3)
+    | 8 -> Equals (getParameter 1, getParameter 2, getParameterValue 3)
     | 99 -> Halt
     | _ -> failwith "Invalid op code" 
 
@@ -66,6 +74,36 @@ let executeInstruction memory (io : IO) ptr instruction =
         let value = resolveParameter memory parameter
         io.Output value
         false, ptr + 2
+
+    | JumpIfTrue (parameter1, parameter2) ->
+        let value1 = resolveParameter memory parameter1
+        let value2 = resolveParameter memory parameter2
+        if value1 <> 0 then
+            false, value2
+        else
+            false, ptr + 3
+
+    | JumpIfFalse (parameter1, parameter2) ->
+        let value1 = resolveParameter memory parameter1
+        let value2 = resolveParameter memory parameter2
+        if value1 = 0 then
+            false, value2
+        else
+            false, ptr + 3
+
+    | LessThan (parameter1, parameter2, outputPosition) ->
+        let value1 = resolveParameter memory parameter1
+        let value2 = resolveParameter memory parameter2
+        let outputValue = if value1 < value2 then 1 else 0
+        memory.[outputPosition] <- outputValue
+        false, ptr + 4
+
+    | Equals (parameter1, parameter2, outputPosition) ->
+        let value1 = resolveParameter memory parameter1
+        let value2 = resolveParameter memory parameter2
+        let outputValue = if value1 = value2 then 1 else 0
+        memory.[outputPosition] <- outputValue
+        false, ptr + 4
 
     | Halt ->
         true, 0

@@ -22,3 +22,4 @@ check Day4.result1 1890
 check Day4.result2 1277
 
 check Day5.result1 5577461
+check Day5.result2 7161591
