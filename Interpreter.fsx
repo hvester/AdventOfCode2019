@@ -23,10 +23,10 @@ let getParameterMode value parameterPosition =
     | 1 -> ImmediateMode
     | _ -> failwith "Invalid parameter mode"
 
-let readInstruction (memory : int array) instructionPointer =
-    let firstValue = memory.[instructionPointer]
+let readInstruction (memory : int array) ptr =
+    let firstValue = memory.[ptr]
     let getParameterValue parameterPosition =
-        memory.[instructionPointer + parameterPosition]
+        memory.[ptr + parameterPosition]
     let getParameter parameterPosition =
         let parameterMode = getParameterMode firstValue parameterPosition
         let parameterValue = getParameterValue parameterPosition
@@ -39,45 +39,44 @@ let readInstruction (memory : int array) instructionPointer =
     | 99 -> Halt
     | _ -> failwith "Invalid op code" 
 
-let getNewInstructionPointer instruction instructionPointer =
-    let shift =
-        match instruction with
-        | Add _ | Multiply _ -> 4
-        | Input _ | Output _ -> 2
-        | Halt _ -> 1
-    instructionPointer + shift
-
 let resolveParameter (memory : int array) parameter =
     match parameter with
     | PositionMode, position -> memory.[position]
     | ImmediateMode, value -> value
 
-let executeInstruction memory (io : IO) instruction =
+let executeInstruction memory (io : IO) ptr instruction =
     match instruction with
     | Add (parameter1, parameter2, outputPosition) ->
         let value1 = resolveParameter memory parameter1
         let value2 = resolveParameter memory parameter2
         memory.[outputPosition] <- value1 + value2
+        false, ptr + 4
+
     | Multiply (parameter1, parameter2, outputPosition) ->
         let value1 = resolveParameter memory parameter1
         let value2 = resolveParameter memory parameter2
         memory.[outputPosition] <- value1 * value2
+        false, ptr + 4
+
     | Input position ->
         memory.[position] <- io.Input ()
+        false, ptr + 2
+
     | Output parameter ->
         let value = resolveParameter memory parameter
         io.Output value
+        false, ptr + 2
+
     | Halt ->
-        ()
-    match instruction with | Halt -> true | _ -> false
+        true, 0
 
 let runProgram io program =
     let memory = Array.copy program
-    let rec loop instructionPointer =
-        let instruction = readInstruction memory instructionPointer
-        match executeInstruction memory io instruction with
-        | true ->
+    let rec loop ptr =
+        let instruction = readInstruction memory ptr
+        match executeInstruction memory io ptr instruction with
+        | true, _ ->
             memory
-        | false -> 
-            loop (getNewInstructionPointer instruction instructionPointer)
+        | false, newPtr -> 
+            loop newPtr
     loop 0
