@@ -52,7 +52,7 @@ let resolveParameter (memory : int array) parameter =
     | PositionMode, position -> memory.[position]
     | ImmediateMode, value -> value
 
-let executeInstruction memory (io : IO) ptr instruction =
+let executeInstruction memory input output ptr instruction =
     match instruction with
     | Add (parameter1, parameter2, outputPosition) ->
         let value1 = resolveParameter memory parameter1
@@ -67,12 +67,12 @@ let executeInstruction memory (io : IO) ptr instruction =
         false, ptr + 4
 
     | Input position ->
-        memory.[position] <- io.Input ()
+        memory.[position] <- input ()
         false, ptr + 2
 
     | Output parameter ->
         let value = resolveParameter memory parameter
-        io.Output value
+        output value
         false, ptr + 2
 
     | JumpIfTrue (parameter1, parameter2) ->
@@ -108,13 +108,16 @@ let executeInstruction memory (io : IO) ptr instruction =
     | Halt ->
         true, 0
 
-let runProgram io program =
+let runProgram input program =
     let memory = Array.copy program
+    let outputValues = ResizeArray<int>()
+    let output = outputValues.Add
     let rec loop ptr =
         let instruction = readInstruction memory ptr
-        match executeInstruction memory io ptr instruction with
+        match executeInstruction memory input output ptr instruction with
         | true, _ ->
-            memory
+            ()
         | false, newPtr -> 
             loop newPtr
     loop 0
+    Seq.toList outputValues, memory

@@ -7,7 +7,7 @@ let inputProgram =
     File.ReadAllText("data/input2.txt").Split([|','|])
     |> Array.map int
 
-let io = Unchecked.defaultof<IO>
+let input () = 0
 
 let fixProgram input1 input2 program =
     let programCopy = Array.copy program
@@ -18,7 +18,8 @@ let fixProgram input1 input2 program =
 let result1 =
     inputProgram
     |> fixProgram 12 2
-    |> runProgram io
+    |> runProgram input
+    |> snd
     |> Array.item 0 // 3716250
 
 let verb, noun =
@@ -30,7 +31,8 @@ let verb, noun =
     |> Seq.find (fun (input1, input2) ->
         inputProgram
         |> fixProgram input1 input2
-        |> runProgram io
+        |> runProgram input
+        |> snd
         |> Array.item 0
         |> ((=) 19690720))
 
