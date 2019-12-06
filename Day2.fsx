@@ -1,4 +1,3 @@
-#load "Day1.fsx"
 #load "Interpreter.fsx"
 
 open System.IO
@@ -10,7 +9,17 @@ let inputProgram =
 
 let io = Unchecked.defaultof<IO>
 
-let result1 = runProgram inputProgram io (Some 12) (Some 2) |> Array.item 0 // 3716250
+let fixProgram input1 input2 program =
+    let programCopy = Array.copy program
+    programCopy.[1] <- input1
+    programCopy.[2] <- input2
+    programCopy
+
+let result1 =
+    inputProgram
+    |> fixProgram 12 2
+    |> runProgram io
+    |> Array.item 0 // 3716250
 
 let verb, noun =
     seq {
@@ -19,6 +28,10 @@ let verb, noun =
                 yield (input1, input2)
     }
     |> Seq.find (fun (input1, input2) ->
-        (runProgram inputProgram io (Some input1) (Some input2)).[0] = 19690720)
+        inputProgram
+        |> fixProgram input1 input2
+        |> runProgram io
+        |> Array.item 0
+        |> ((=) 19690720))
 
 let result2 = 100 * verb + noun // 6472

@@ -1,3 +1,4 @@
+#load "Interpreter.fsx"
 #load "Day1.fsx"
 #load "Day2.fsx"
 #load "Day3.fsx"

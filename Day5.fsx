@@ -11,8 +11,7 @@ let result1 =
         { new IO with
             member __.Input() = 1
             member __.Output(v) = output.Add(v) }
-    runProgram program io None None |> ignore
+    runProgram io program |> ignore
     match output |> Seq.skipWhile ((=) 0) |> Seq.toList with
     | [ diagnosticCode ] -> diagnosticCode
     | _ -> failwith "Something went wrong"
-// 5577461

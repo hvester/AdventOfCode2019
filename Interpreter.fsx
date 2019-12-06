@@ -71,10 +71,8 @@ let executeInstruction memory (io : IO) instruction =
         ()
     match instruction with | Halt -> true | _ -> false
 
-let runProgram program io argument1 argument2 =
+let runProgram io program =
     let memory = Array.copy program
-    argument1 |> Option.iter (fun v -> memory.[1] <- v)
-    argument2 |> Option.iter (fun v -> memory.[2] <- v)
     let rec loop instructionPointer =
         let instruction = readInstruction memory instructionPointer
         match executeInstruction memory io instruction with
