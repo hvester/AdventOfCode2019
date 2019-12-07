@@ -4,12 +4,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Interpreter.fsx" />
+    <Compile Include="CheckAll.fsx" />
     <Compile Include="Day1.fsx" />
     <Compile Include="Day2.fsx" />
     <Compile Include="Day3.fsx" />
     <Compile Include="Day4.fsx" />
     <Compile Include="Day5.fsx" />
-    <Compile Include="CheckAll.fsx" />
     <Compile Include="Day6.fsx" />
+    <Compile Include="Day7.fsx" />
   </ItemGroup>
 </Project>

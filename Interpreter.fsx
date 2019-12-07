@@ -1,3 +1,5 @@
+open System.Collections.Generic
+
 type ParameterMode =
     | PositionMode
     | ImmediateMode
@@ -121,3 +123,9 @@ let runProgram input program =
             loop newPtr
     loop 0
     Seq.toList outputValues, memory
+
+let inputOfSeq (inputs : int seq) =
+    let enumerator = inputs.GetEnumerator()
+    fun () ->
+        enumerator.MoveNext() |> ignore
+        enumerator.Current
