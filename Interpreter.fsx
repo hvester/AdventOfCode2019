@@ -17,9 +17,10 @@ type Instruction =
     | Equals of Parameter * Parameter * int
     | Halt
 
-type IO =
-    abstract Input : unit -> int
-    abstract Output : int -> unit
+type ProgramState =
+    | WaitingForInput of (int -> ProgramState)
+    | OutputtingValue of int * (unit -> ProgramState)
+    | Halted of int array
 
 let getOpCode value = value % 100
 
@@ -49,83 +50,64 @@ let readInstruction (memory : int array) ptr =
     | 99 -> Halt
     | _ -> failwith "Invalid op code" 
 
-let resolveParameter (memory : int array) parameter =
-    match parameter with
-    | PositionMode, position -> memory.[position]
-    | ImmediateMode, value -> value
+let rec execute (memory : int array) ptr =
+    let (|Resolved|) = function
+        | PositionMode, position -> memory.[position]
+        | ImmediateMode, value -> value
 
-let executeInstruction memory input output ptr instruction =
-    match instruction with
-    | Add (parameter1, parameter2, outputPosition) ->
-        let value1 = resolveParameter memory parameter1
-        let value2 = resolveParameter memory parameter2
+    match readInstruction memory ptr with
+    | Add (Resolved value1, Resolved value2, outputPosition) ->
         memory.[outputPosition] <- value1 + value2
-        false, ptr + 4
+        execute memory (ptr + 4)
 
-    | Multiply (parameter1, parameter2, outputPosition) ->
-        let value1 = resolveParameter memory parameter1
-        let value2 = resolveParameter memory parameter2
+    | Multiply (Resolved value1, Resolved value2, outputPosition) ->
         memory.[outputPosition] <- value1 * value2
-        false, ptr + 4
+        execute memory (ptr + 4)
 
     | Input position ->
-        memory.[position] <- input ()
-        false, ptr + 2
+        WaitingForInput (fun input ->
+            memory.[position] <- input
+            execute memory (ptr + 2))
 
-    | Output parameter ->
-        let value = resolveParameter memory parameter
-        output value
-        false, ptr + 2
+    | Output (Resolved value) ->     
+        OutputtingValue (value, fun () -> execute memory (ptr + 2))
 
-    | JumpIfTrue (parameter1, parameter2) ->
-        let value1 = resolveParameter memory parameter1
-        let value2 = resolveParameter memory parameter2
-        if value1 <> 0 then
-            false, value2
-        else
-            false, ptr + 3
+    | JumpIfTrue (Resolved value1, Resolved value2) ->
+        execute memory (if value1 <> 0 then value2 else ptr + 3)
 
-    | JumpIfFalse (parameter1, parameter2) ->
-        let value1 = resolveParameter memory parameter1
-        let value2 = resolveParameter memory parameter2
-        if value1 = 0 then
-            false, value2
-        else
-            false, ptr + 3
+    | JumpIfFalse (Resolved value1, Resolved value2) ->
+        execute memory (if value1 = 0 then value2 else ptr + 3)
 
-    | LessThan (parameter1, parameter2, outputPosition) ->
-        let value1 = resolveParameter memory parameter1
-        let value2 = resolveParameter memory parameter2
+    | LessThan (Resolved value1, Resolved value2, outputPosition) ->
         let outputValue = if value1 < value2 then 1 else 0
         memory.[outputPosition] <- outputValue
-        false, ptr + 4
+        execute memory (ptr + 4)
 
-    | Equals (parameter1, parameter2, outputPosition) ->
-        let value1 = resolveParameter memory parameter1
-        let value2 = resolveParameter memory parameter2
+    | Equals (Resolved value1, Resolved value2, outputPosition) ->
         let outputValue = if value1 = value2 then 1 else 0
         memory.[outputPosition] <- outputValue
-        false, ptr + 4
+        execute memory (ptr + 4)
 
     | Halt ->
-        true, 0
+        Halted memory
 
-let runProgram input program =
+let startProgram program =
     let memory = Array.copy program
-    let outputValues = ResizeArray<int>()
-    let output = outputValues.Add
-    let rec loop ptr =
-        let instruction = readInstruction memory ptr
-        match executeInstruction memory input output ptr instruction with
-        | true, _ ->
-            ()
-        | false, newPtr -> 
-            loop newPtr
-    loop 0
-    Seq.toList outputValues, memory
+    execute memory 0
 
-let inputOfSeq (inputs : int seq) =
-    let enumerator = inputs.GetEnumerator()
-    fun () ->
-        enumerator.MoveNext() |> ignore
-        enumerator.Current
+let runProgram inputs program =
+    let rec loop outputs remainingInputs programState =
+        match programState, remainingInputs with
+        | WaitingForInput _ , [] ->
+            failwith "Run out of inputs"
+
+        | WaitingForInput continuation, input :: tail ->
+            loop outputs tail (continuation input)
+
+        | OutputtingValue (value, continuation), _ ->
+            loop (value :: outputs) remainingInputs (continuation ())
+
+        | Halted memory, _ ->
+            List.rev outputs, memory
+    loop [] inputs (startProgram program)
+
