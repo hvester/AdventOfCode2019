@@ -6,6 +6,7 @@
 #load "Day5.fsx"
 #load "Day6.fsx"
 #load "Day7.fsx"
+#load "Day8.fsx"
 
 let check result expected =
     if result <> expected then
@@ -31,3 +32,6 @@ check Day6.result2 370
 
 check Day7.result1 65464
 check Day7.result2 1518124
+
+check Day8.result1 1548
+// check Day8.result2 
