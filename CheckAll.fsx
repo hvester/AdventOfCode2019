@@ -1,4 +1,3 @@
-#load "Interpreter.fsx"
 #load "Day1.fsx"
 #load "Day2.fsx"
 #load "Day3.fsx"
@@ -7,6 +6,8 @@
 #load "Day6.fsx"
 #load "Day7.fsx"
 #load "Day8.fsx"
+
+open System
 
 let check result expected =
     if result <> expected then
@@ -34,4 +35,12 @@ check Day7.result1 65464
 check Day7.result2 1518124
 
 check Day8.result1 1548
-// check Day8.result2 
+
+[| " ##  #### #  # #  #  ##  "
+   "#  # #    # #  #  # #  # "
+   "#    ###  ##   #  # #  # "
+   "#    #    # #  #  # #### "
+   "#  # #    # #  #  # #  # "
+   " ##  #### #  #  ##  #  # " |]
+|> fun rows -> String.Join("\n", rows)
+|> check Day8.result2 
