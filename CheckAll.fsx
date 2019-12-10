@@ -7,6 +7,7 @@
 #load "Day7.fsx"
 #load "Day8.fsx"
 
+#load "Day10.fsx"
 open System
 
 let check result expected =
@@ -44,3 +45,7 @@ check Day8.result1 1548
    " ##  #### #  #  ##  #  # " |]
 |> fun rows -> String.Join("\n", rows)
 |> check Day8.result2 
+
+
+check Day10.result1 314
+check Day10.result2 1513
