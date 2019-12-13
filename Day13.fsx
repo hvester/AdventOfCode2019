@@ -1,6 +1,5 @@
 #load "Interpreter.fsx"
 
-open System
 open System.IO
 open Interpreter
 
@@ -10,4 +9,5 @@ let result1 =
     runProgram [] inputProgram
     |> fst
     |> List.chunkBySize 3
-    |> List.filter (fun xs -> xs.[3] = 2L)
+    |> List.filter (fun xs -> xs.[2] = 2L)
+    |> List.length
