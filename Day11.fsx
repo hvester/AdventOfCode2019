@@ -1,10 +1,8 @@
 #load "Interpreter.fsx"
-#load "Debugger.fsx"
 
 open System
 open System.IO
 open Interpreter
-open Debugger
 
 let inputProgram = File.ReadAllText("data/input11.txt").Split([|','|]) |> Array.map int64
 
@@ -38,7 +36,7 @@ let runPaintingRobot initialPanels program =
             panels
         | _ ->
             failwith "Unexpected program state"
-    loop initialPanels (0, 0) (0, 1) (startProgram None program)
+    loop initialPanels (0, 0) (0, 1) (startProgram program)
 
 let result1 = (runPaintingRobot Map.empty inputProgram).Count // 2720
 
@@ -60,4 +58,3 @@ let renderPanels panels =
 let result2 =
     runPaintingRobot (Map.ofList [ ((0, 0), 1) ]) inputProgram
     |> renderPanels
-    
