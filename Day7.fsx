@@ -5,10 +5,10 @@ open Interpreter
 
 let inputProgram =
     File.ReadAllText("data/input7.txt").Split([|','|])
-    |> Array.map int
+    |> Array.map int64
 
 let runAmplifiers program settings =
-    (0, settings)
+    (0L, settings)
     ||> List.fold (fun input setting ->
         runProgram [setting; input] program
         |> fst
@@ -29,7 +29,7 @@ let rec getAllPermutations xs =
     |]
 
 let result1 =
-    getAllPermutations [| 0 .. 4 |]
+    getAllPermutations [| 0L .. 4L |]
     |> Array.map (Array.toList >> runAmplifiers inputProgram)
     |> Array.max
 
@@ -61,10 +61,10 @@ let runAmplifiersWithFeedbackLoop program settings =
             loop nextProgramStates loopOutput
         | _, None ->
             loopInput
-    loop initializedPrograms 0
+    loop initializedPrograms 0L
 
 let result2 =
-    getAllPermutations [| 5 .. 9 |]
+    getAllPermutations [| 5L .. 9L |]
     |> Array.map (Array.toList >> runAmplifiersWithFeedbackLoop inputProgram)
     |> Array.max
 

@@ -5,7 +5,7 @@ open Interpreter
 
 let inputProgram =
     File.ReadAllText("data/input2.txt").Split([|','|])
-    |> Array.map int
+    |> Array.map int64
 
 let fixProgram input1 input2 program =
     let programCopy = Array.copy program
@@ -15,15 +15,15 @@ let fixProgram input1 input2 program =
 
 let result1 =
     inputProgram
-    |> fixProgram 12 2
+    |> fixProgram 12L 2L
     |> runProgram []
     |> snd
     |> Array.item 0 // 3716250
 
 let verb, noun =
     seq {
-        for input1 in 0 .. 99 do
-            for input2 in 0 .. 99 do
+        for input1 in 0L .. 99L do
+            for input2 in 0L .. 99L do
                 yield (input1, input2)
     }
     |> Seq.find (fun (input1, input2) ->
@@ -32,6 +32,6 @@ let verb, noun =
         |> runProgram []
         |> snd
         |> Array.item 0
-        |> ((=) 19690720))
+        |> ((=) 19690720L))
 
-let result2 = 100 * verb + noun // 6472
+let result2 = 100L * verb + noun // 6472

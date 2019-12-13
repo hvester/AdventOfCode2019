@@ -1,99 +1,126 @@
-open System.Collections.Generic
+open Checked
 
 type ParameterMode =
     | PositionMode
     | ImmediateMode
+    | RelativeMode
 
-type Parameter = ParameterMode * int
+type Parameter = ParameterMode * int64
 
 type Instruction =
-    | Add of Parameter * Parameter * int 
-    | Multiply of Parameter * Parameter * int
-    | Input of int
+    | Add of Parameter * Parameter * Parameter
+    | Multiply of Parameter * Parameter * Parameter
+    | Input of Parameter
     | Output of Parameter
     | JumpIfTrue of Parameter * Parameter
     | JumpIfFalse of Parameter * Parameter
-    | LessThan of Parameter * Parameter * int
-    | Equals of Parameter * Parameter * int
+    | LessThan of Parameter * Parameter * Parameter
+    | Equals of Parameter * Parameter * Parameter
+    | AdjustRelativeBase of Parameter
     | Halt
 
 type ProgramState =
-    | WaitingForInput of (int -> ProgramState)
-    | OutputtingValue of int * (unit -> ProgramState)
-    | Halted of int array
+    | WaitingForInput of (int64 -> ProgramState)
+    | OutputtingValue of int64 * (unit -> ProgramState)
+    | Halted of int64 array
 
-let getOpCode value = value % 100
+type Memory(initialData) =
+    let mutable data = Array.copy initialData
 
-let getParameterMode value parameterPosition =
-    match (value / pown 10 (parameterPosition + 1)) % 10 with
+    member __.Read(address : int64) =
+        if int address >= data.Length then 0L else data.[int address]
+
+    member __.Write(address : int64, value) =
+        if int address >= data.Length then
+            let newSize = max (int address + 1) (2 * data.Length)
+            let newData = Array.zeroCreate<int64> newSize
+            Array.blit data 0 newData 0 (data.Length)
+            newData.[int address] <- value
+            data <- newData
+        else
+            data.[int address] <- value
+
+    member __.GetData() = data
+
+let getOpCode value = int value % 100
+
+let getParameterMode (value : int64) (parameterPosition : int) =
+    match (int value / pown 10 (parameterPosition + 1)) % 10 with
     | 0 -> PositionMode
     | 1 -> ImmediateMode
+    | 2 -> RelativeMode
     | _ -> failwith "Invalid parameter mode"
 
-let readInstruction (memory : int array) ptr =
-    let firstValue = memory.[ptr]
-    let getParameterValue parameterPosition =
-        memory.[ptr + parameterPosition]
+let readInstruction (memory : Memory) ptr =
+    let firstValue = memory.Read(ptr)
     let getParameter parameterPosition =
         let parameterMode = getParameterMode firstValue parameterPosition
-        let parameterValue = getParameterValue parameterPosition
+        let parameterValue = memory.Read(ptr + int64 parameterPosition)
         (parameterMode, parameterValue)
     match getOpCode firstValue with
-    | 1 -> Add (getParameter 1, getParameter 2, getParameterValue 3)
-    | 2 -> Multiply (getParameter 1, getParameter 2, getParameterValue 3)
-    | 3 -> Input (getParameterValue 1)
+    | 1 -> Add (getParameter 1, getParameter 2, getParameter 3)
+    | 2 -> Multiply (getParameter 1, getParameter 2, getParameter 3)
+    | 3 -> Input (getParameter 1)
     | 4 -> Output (getParameter 1)
     | 5 -> JumpIfTrue (getParameter 1, getParameter 2)
     | 6 -> JumpIfFalse (getParameter 1, getParameter 2)
-    | 7 -> LessThan (getParameter 1, getParameter 2, getParameterValue 3)
-    | 8 -> Equals (getParameter 1, getParameter 2, getParameterValue 3)
+    | 7 -> LessThan (getParameter 1, getParameter 2, getParameter 3)
+    | 8 -> Equals (getParameter 1, getParameter 2, getParameter 3)
+    | 9 -> AdjustRelativeBase (getParameter 1)
     | 99 -> Halt
     | _ -> failwith "Invalid op code" 
 
-let rec execute (memory : int array) ptr =
+let rec execute (memory : Memory) relativeBase ptr =
     let (|Resolved|) = function
-        | PositionMode, position -> memory.[position]
+        | PositionMode, position -> memory.Read(position)
         | ImmediateMode, value -> value
+        | RelativeMode, relativePosition -> memory.Read(relativeBase + relativePosition)
+    let (|OutputAddress|) = function
+        | PositionMode, position -> position
+        | ImmediateMode, _ -> failwith "Output position must not be in immidiate mode" 
+        | RelativeMode, relativePosition -> relativeBase + relativePosition
 
     match readInstruction memory ptr with
-    | Add (Resolved value1, Resolved value2, outputPosition) ->
-        memory.[outputPosition] <- value1 + value2
-        execute memory (ptr + 4)
+    | Add (Resolved value1, Resolved value2, OutputAddress address) ->
+        memory.Write(address, value1 + value2)
+        execute memory relativeBase (ptr + 4L)
 
-    | Multiply (Resolved value1, Resolved value2, outputPosition) ->
-        memory.[outputPosition] <- value1 * value2
-        execute memory (ptr + 4)
+    | Multiply (Resolved value1, Resolved value2, OutputAddress address) ->
+        memory.Write(address, value1 * value2)
+        execute memory relativeBase (ptr + 4L)
 
-    | Input position ->
+    | Input (OutputAddress address) ->
         WaitingForInput (fun input ->
-            memory.[position] <- input
-            execute memory (ptr + 2))
+            memory.Write(address, input)
+            execute memory relativeBase (ptr + 2L))
 
     | Output (Resolved value) ->     
-        OutputtingValue (value, fun () -> execute memory (ptr + 2))
+        OutputtingValue (value, fun () ->
+            execute memory relativeBase (ptr + 2L))
 
     | JumpIfTrue (Resolved value1, Resolved value2) ->
-        execute memory (if value1 <> 0 then value2 else ptr + 3)
+        execute memory relativeBase (if value1 <> 0L then value2 else ptr + 3L)
 
     | JumpIfFalse (Resolved value1, Resolved value2) ->
-        execute memory (if value1 = 0 then value2 else ptr + 3)
+        execute memory relativeBase (if value1 = 0L then value2 else ptr + 3L)
 
-    | LessThan (Resolved value1, Resolved value2, outputPosition) ->
-        let outputValue = if value1 < value2 then 1 else 0
-        memory.[outputPosition] <- outputValue
-        execute memory (ptr + 4)
+    | LessThan (Resolved value1, Resolved value2, OutputAddress address) ->
+        memory.Write(address, if value1 < value2 then 1L else 0L)
+        execute memory relativeBase (ptr + 4L)
 
-    | Equals (Resolved value1, Resolved value2, outputPosition) ->
-        let outputValue = if value1 = value2 then 1 else 0
-        memory.[outputPosition] <- outputValue
-        execute memory (ptr + 4)
+    | Equals (Resolved value1, Resolved value2, OutputAddress address) ->
+        memory.Write(address, if value1 = value2 then 1L else 0L)
+        execute memory relativeBase (ptr + 4L)
+
+    | AdjustRelativeBase (Resolved value) ->
+        execute memory (relativeBase + value) (ptr + 2L)
 
     | Halt ->
-        Halted memory
+        Halted (memory.GetData())
 
 let startProgram program =
-    let memory = Array.copy program
-    execute memory 0
+    let memory = Memory(program)
+    execute memory 0L 0L
 
 let runProgram inputs program =
     let rec loop outputs remainingInputs programState =
@@ -110,4 +137,3 @@ let runProgram inputs program =
         | Halted memory, _ ->
             List.rev outputs, memory
     loop [] inputs (startProgram program)
-
