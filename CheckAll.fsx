@@ -48,6 +48,7 @@ check Day8.result1 1548
 |> check Day8.result2
 
 check Day9.result1 3454977209L
+check Day9.result2 50120L
 
 check Day10.result1 314
 check Day10.result2 1513
