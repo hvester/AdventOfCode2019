@@ -23,16 +23,16 @@ let calculateNewPositions positions velocities =
     ||> List.map2 (fun (x, y, z) (vx, vy, vz) ->
         (x + vx, y + vy, z + vz) )
 
-let simulate nSteps initialPositions =
-    let rec loop stepsLeft positions velocities =
-        if stepsLeft <= 0 then
-            (positions, velocities)
-        else
+let simulate initialPositions =
+    let rec loop positions velocities =
+        seq {
+            yield (positions, velocities)
             let newVelocities = calculateNewVelocities positions velocities
             let newPositions = calculateNewPositions positions newVelocities
-            loop (stepsLeft - 1) newPositions newVelocities
+            yield! loop newPositions newVelocities
+        }
     let initialVelocities = [ for _ in 1 .. (List.length initialPositions) do yield (0, 0, 0)]
-    loop nSteps initialPositions initialVelocities
+    loop initialPositions initialVelocities
 
 let getEnergy (positions, velocities) =
     (positions, velocities)
@@ -41,5 +41,34 @@ let getEnergy (positions, velocities) =
     |> List.sum
 
 let result1 =
-    simulate 1000 initialPositions
+    simulate initialPositions
+    |> Seq.item 1000
     |> getEnergy
+
+let findCycle values =
+    let firstValue = Seq.head values
+    values
+    |> Seq.indexed
+    |> Seq.tail
+    |> Seq.pick (fun (i, value) ->
+        if value = firstValue then
+            Some i
+        else
+            None)
+
+let states =
+    simulate initialPositions
+    |> Seq.mapi (fun i (positions, velocities) ->
+        (positions, velocities)
+        ||> List.map2 (fun (x, y, z) (vx, vy, vz) ->
+            (x, vx), (y, vy), (z, vz))
+        |> List.unzip3)
+
+let xCycle = states |> Seq.map (fun (x, _, _) -> x) |> findCycle |> int64
+let yCycle = states |> Seq.map (fun (_, y, _) -> y) |> findCycle |> int64
+let zCycle = states |> Seq.map (fun (_, _, z) -> z) |> findCycle |> int64
+
+let rec gcd a b = if b = 0L then a else gcd b (a % b)
+let lcm a b = a * b / gcd a b 
+
+let result2 = lcm xCycle (lcm yCycle zCycle)
