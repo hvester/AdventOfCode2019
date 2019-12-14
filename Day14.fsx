@@ -5,7 +5,7 @@ let input = File.ReadAllText("data/input14.txt")
 
 let parseAmountAndChemical (str : string) =
     match str.Trim().Split([|' '|]) with
-    | [| amount; chemical |] -> (int amount, chemical)
+    | [| amount; chemical |] -> (int64 amount, chemical)
     | _ -> failwithf "Invalid string: %s" str
 
 let parseFormulas (str : string) =
@@ -35,12 +35,12 @@ let rec orderFormulas formulas =
         yield! orderFormulas appearInInputs
     }
 
-let getAmount (d : Dictionary<string, int>) chemical =
+let getAmount (d : Dictionary<string, int64>) chemical =
     match d.TryGetValue chemical with
-    | false, _ -> 0
+    | false, _ -> 0L
     | true, amount -> amount
 
-let addAmount (d : Dictionary<string, int>) chemical amount =
+let addAmount (d : Dictionary<string, int64>) chemical amount =
     d.[chemical] <- (getAmount d chemical) + amount
 
 let updateNeededAndExtra needed extra formula =
@@ -48,20 +48,19 @@ let updateNeededAndExtra needed extra formula =
     let currentAmount = getAmount extra outputChemical
     let neededAmount = getAmount needed outputChemical
     let factor =
-        if (neededAmount - currentAmount) % outputAmount = 0 then
+        if (neededAmount - currentAmount) % outputAmount = 0L then
             (neededAmount - currentAmount) / outputAmount
         else
-            (neededAmount - currentAmount) / outputAmount + 1
+            (neededAmount - currentAmount) / outputAmount + 1L
     needed.Remove(outputChemical) |> ignore
     extra.[outputChemical] <- outputAmount * factor - neededAmount
     for inputAmount, inputChemical in inputs do
         addAmount needed inputChemical (inputAmount * factor)
 
-let calculateNeededOre formulas =
-    let orderedFormulas = orderFormulas formulas
-    let needed = Dictionary<string, int>()
-    needed.Add("FUEL", 1)
-    let extra = Dictionary<string, int>()
+let calculateNeededOre orderedFormulas fuelAmount =
+    let needed = Dictionary<string, int64>()
+    needed.Add("FUEL", fuelAmount)
+    let extra = Dictionary<string, int64>()
     while not (needed.Count = 1 && needed.ContainsKey("ORE")) do
         orderedFormulas
         |> Seq.find (fun (_, (_, outputChemical)) ->
@@ -69,6 +68,29 @@ let calculateNeededOre formulas =
         |> updateNeededAndExtra needed extra
     needed.["ORE"]
 
-let formulas = parseFormulas input
+let orderedFormulas = 
+    parseFormulas input
+    |> orderFormulas
 
-let result1 = calculateNeededOre formulas
+let result1 = calculateNeededOre orderedFormulas 1L
+
+let result2 =
+    let f = calculateNeededOre orderedFormulas
+    let y = 1000000000000L
+    // Find largest x so that f(x) <= y
+    let initialUpperBound =
+        Seq.initInfinite (fun i -> pown 2L i)
+        |> Seq.find (fun x -> f x > y)
+    let rec loop lb ub =
+        if ub - lb <= 1L then
+            lb
+        else
+            let mid = (lb + ub) / 2L
+            let fmid = f mid
+            if fmid = y then
+                mid
+            elif fmid > y then
+                loop lb mid
+            else
+                loop mid ub
+    loop (initialUpperBound / 2L) initialUpperBound

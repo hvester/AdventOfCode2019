@@ -74,4 +74,5 @@ check Day12.result2 428576638953552L
 check Day13.result1 247
 check Day13.result2 12954
 
-check Day14.result1 720484
+check Day14.result1 720484L
+check Day14.result2 1993284L
