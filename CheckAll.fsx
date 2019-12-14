@@ -9,6 +9,8 @@
 #load "Day9.fsx"
 #load "Day10.fsx"
 #load "Day11.fsx"
+#load "Day12.fsx"
+#load "Day13.fsx"
 
 open System
 
@@ -64,3 +66,6 @@ check Day11.result1
    "..##..####.#.....##..#..#.#..#..###..##...." |]
 |> fun rows -> String.Join("\n", rows)
 |> check Day11.result2
+
+check Day13.result1 247
+check Day13.result2 12954
