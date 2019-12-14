@@ -67,5 +67,8 @@ check Day11.result1
 |> fun rows -> String.Join("\n", rows)
 |> check Day11.result2
 
+check Day12.result1 7179
+check Day12.result2 428576638953552L
+
 check Day13.result1 247
 check Day13.result2 12954
