@@ -11,6 +11,7 @@
 #load "Day11.fsx"
 #load "Day12.fsx"
 #load "Day13.fsx"
+#load "Day14.fsx"
 
 open System
 
@@ -72,3 +73,5 @@ check Day12.result2 428576638953552L
 
 check Day13.result1 247
 check Day13.result2 12954
+
+check Day14.result1 720484
