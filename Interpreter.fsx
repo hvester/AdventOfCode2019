@@ -42,6 +42,8 @@ type Memory(initialData) =
 
     member __.GetData() = data
 
+    member __.CreateCopy() = Memory(data)
+
 let getOpCode value = int value % 100
 
 let getParameterMode (value : int64) (parameterPosition : int) =
@@ -91,12 +93,13 @@ let rec execute (memory : Memory) relativeBase ptr =
 
     | Input (OutputAddress address) ->
         WaitingForInput (fun input ->
-            memory.Write(address, input)
-            execute memory relativeBase (ptr + 2L))
+            let newMemory = memory.CreateCopy()
+            newMemory.Write(address, input)
+            execute newMemory relativeBase (ptr + 2L))
 
     | Output (Resolved value) ->     
         OutputtingValue (value, fun () ->
-            execute memory relativeBase (ptr + 2L))
+            execute (memory.CreateCopy()) relativeBase (ptr + 2L))
 
     | JumpIfTrue (Resolved value1, Resolved value2) ->
         execute memory relativeBase (if value1 <> 0L then value2 else ptr + 3L)
@@ -137,3 +140,19 @@ let runProgram inputs program =
         | Halted memory, _ ->
             List.rev outputs, memory
     loop [] inputs (startProgram program)
+
+let expectInput = function
+    | WaitingForInput continuation -> continuation
+    | OutputtingValue _ -> failwith "Expected input, but got output"
+    | Halted _ -> failwith "Expected input, but program halted"
+ 
+let expectOutput = function
+    | WaitingForInput _ -> failwith "Expected output, but got input request"
+    | OutputtingValue (output, continuation) -> (output, continuation)
+    | Halted _ -> failwith "Expected output, but program halted"
+ 
+let expectHalt = function
+    | WaitingForInput continuation -> failwith "Expected halt, but got input request"
+    | OutputtingValue _ -> failwith "Expected halt, but got output"
+    | Halted data -> data
+ 
