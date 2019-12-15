@@ -79,3 +79,4 @@ check Day14.result1 720484L
 check Day14.result2 1993284L
 
 check Day15.result1 266
+check Day15.result2 274

@@ -16,7 +16,7 @@ let outputToChar x =
     match x with
     | 0L -> '#'
     | 1L -> '.'
-    | 2L -> 'O'
+    | 2L -> 'S'
     | _ -> failwith "Invalid output"
 
 let executeMove direction programState =
@@ -25,27 +25,70 @@ let executeMove direction programState =
     let output, cont2 = expectOutput (cont1 command)
     outputToChar output, cont2
 
-let findOxygenSystem program =
-    let mutable oxygenSystemPosition : (int * int) option = None
-    let scene = Dictionary<int * int, char>()
+let exploreArea program =
+    let area = Dictionary<int * int, char>()
+    let distances = Dictionary<int * int, int>()
     let startPosition = (0, 0)
-    scene.[startPosition] <- '.'
+    area.[startPosition] <- '.'
+    distances.[startPosition] <- 0
     let rec loop steps states =
         let newStates =
             [ for position, programState in states do
                 for direction in directions do
                     let targetPosition = move position direction
-                    if not (scene.ContainsKey targetPosition) then
+                    if not (area.ContainsKey targetPosition) then
                         let c, cont2 = executeMove direction programState
-                        scene.[targetPosition] <- c
-                        if c = '.' then
-                            yield (targetPosition, cont2())
-                        elif c = 'O' then
-                            oxygenSystemPosition <- Some targetPosition ]
-        if oxygenSystemPosition.IsSome then
-            steps + 1
+                        area.[targetPosition] <- c
+                        if c = '.' || c = 'S' then
+                            distances.[targetPosition] <- steps
+                            yield (targetPosition, cont2()) ]
+        if List.isEmpty newStates then
+            area, distances
         else
             loop (steps + 1) newStates
-    loop 0 [ (startPosition, startProgram program) ]
+    loop 1 [ (startPosition, startProgram program) ]
 
-let result1 = findOxygenSystem inputProgram
+let area, distances = exploreArea inputProgram
+
+let oxygenSystemPosition =
+    area
+    |> Seq.pick (fun (KeyValue(position, c)) ->
+        if c = 'S' then Some position else None)
+
+let result1 = distances.[oxygenSystemPosition]
+
+let renderArea position (area : Dictionary<int * int, char>) =
+    let xs = area.Keys |> Seq.map fst
+    let ys = area.Keys |> Seq.map snd
+    for y in Seq.max ys .. -1 .. Seq.min ys do
+        for x in Seq.min xs .. Seq.max xs do
+            let c =
+                if (x, y) = position then
+                    'D'
+                else 
+                    match area.TryGetValue <| (x, y) with
+                    | false, _ -> ' '
+                    | true, c -> c
+            printf "%c" c
+        printfn ""
+
+// renderArea (0, 0) area
+
+let fillArea startPosition (area : Dictionary<int * int, char>) =
+    let hasOxygen = HashSet<int * int>()
+    hasOxygen.Add(startPosition) |> ignore
+    let rec loop steps positions =
+        let newPositions =
+            [ for position in positions do
+                for direction in directions do
+                    let targetPosition = move position direction
+                    if not (hasOxygen.Contains(targetPosition)) && area.[targetPosition] = '.' then
+                        hasOxygen.Add(targetPosition) |> ignore
+                        yield targetPosition ]
+        if List.isEmpty newPositions then
+            steps
+        else
+            loop (steps + 1) newPositions
+    loop 0 [ startPosition ]
+
+let result2 = fillArea oxygenSystemPosition area
