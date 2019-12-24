@@ -14,6 +14,8 @@
 #load "Day14.fsx"
 #load "Day15.fsx"
 
+#load "Day17.fsx"
+
 open System
 
 let check result expected =
@@ -80,3 +82,5 @@ check Day14.result2 1993284L
 
 check Day15.result1 266
 check Day15.result2 274
+
+check Day17.result1 14332
