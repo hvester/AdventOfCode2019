@@ -84,3 +84,4 @@ check Day15.result1 266
 check Day15.result2 274
 
 check Day17.result1 14332
+check Day17.result2 1034009L
