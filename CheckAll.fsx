@@ -91,3 +91,4 @@ check Day17.result2 1034009L
 
 
 check Day24.result1 18350099
+check Day24.result2 2037
