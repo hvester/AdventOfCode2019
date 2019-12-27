@@ -107,9 +107,7 @@ let mainRoutine, aFuncOpt, bFuncOpt, cFuncOpt =
     }
     |> Seq.pick id
 
-let mainRoutineInputs =
-    [| yield! String.Join(",", mainRoutine).ToCharArray()
-       yield '\n' |]
+let mainRoutineInputs = String.Join(",", mainRoutine)
 
 let funcToInputs func =
     let strings =
@@ -118,8 +116,7 @@ let funcToInputs func =
             | Left -> "L"
             | Right -> "R"
             | Forward x -> string x)
-    [| yield! String.Join(",", strings).ToCharArray()
-       yield '\n' |]
+    String.Join(",", strings)
 
 let aFuncInputs = funcToInputs aFuncOpt.Value
 let bFuncInputs = funcToInputs bFuncOpt.Value
@@ -130,16 +127,14 @@ let fixedProgram =
     program.[0] <- 2L
     program
 
-let inputs =
-    [ yield! mainRoutineInputs
-      yield! aFuncInputs
-      yield! bFuncInputs
-      yield! cFuncInputs
-      yield 'n'
-      yield '\n' ]
-    |> List.map int64
+let commands =
+    [ mainRoutineInputs
+      aFuncInputs
+      bFuncInputs
+      cFuncInputs
+      "n" ]
 
 let result2 =
-    runProgram inputs fixedProgram
-    |> fst
+    runAsciiProgram commands fixedProgram
     |> List.last
+    |> fun str -> str.Split('\n') |> Array.last |> int64

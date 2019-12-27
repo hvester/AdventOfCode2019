@@ -1,3 +1,4 @@
+open System
 open Checked
 
 type ParameterMode =
@@ -155,4 +156,41 @@ let expectHalt = function
     | WaitingForInput continuation -> failwith "Expected halt, but got input request"
     | OutputtingValue _ -> failwith "Expected halt, but got output"
     | Halted data -> data
- 
+
+let expectManyInputs inputs programState =
+    (programState, inputs)
+    ||> List.fold (fun state input ->
+        let continuation = expectInput state
+        continuation input)
+
+let runUntilInputOrHalt programState =
+    let rec loop acc = function
+        | OutputtingValue (output, continuation) ->
+            loop (output :: acc) (continuation ())
+        | nextProgramState ->
+            (List.rev acc, nextProgramState)
+    loop [] programState
+
+let private withFormattedOutput (outputs : int64 list, programState) =
+    let outputStrings = 
+        outputs
+        |> List.map (fun n -> if n > 127L then string n else char n |> string)
+    (String.Join("", outputStrings), programState)
+
+let startAsciiProgram program =
+    runUntilInputOrHalt (startProgram program)
+    |> withFormattedOutput
+
+let continueAsciiProgram (command : string) programState =
+    let inputs = 
+        [ yield! command.ToCharArray(); yield '\n' ]
+        |> List.map int64
+    expectManyInputs inputs programState
+    |> runUntilInputOrHalt
+    |> withFormattedOutput
+
+let runAsciiProgram (commands : string list) program =
+    (startAsciiProgram program, commands)
+    ||> List.scan (fun (_, programState) command ->
+        continueAsciiProgram command programState)
+    |> List.map fst
