@@ -92,6 +92,7 @@ check Day17.result1 14332
 check Day17.result2 1034009L
 
 check Day21.result1 19362822
+check Day21.result2 1143625214
 
 check Day24.result1 18350099
 check Day24.result2 2037

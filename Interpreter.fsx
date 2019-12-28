@@ -189,7 +189,7 @@ let continueAsciiProgram (command : string) programState =
     |> runUntilInputOrHalt
     |> withFormattedOutput
 
-let runAsciiProgram (commands : string list) program =
+let runAsciiProgram program (commands : string list) =
     (startAsciiProgram program, commands)
     ||> List.scan (fun (_, programState) command ->
         continueAsciiProgram command programState)

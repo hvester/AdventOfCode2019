@@ -135,6 +135,6 @@ let commands =
       "n" ]
 
 let result2 =
-    runAsciiProgram commands fixedProgram
+    runAsciiProgram fixedProgram commands
     |> List.last
     |> fun str -> str.Split('\n') |> Array.last |> int64
