@@ -20,10 +20,11 @@ let outputToChar x =
     | _ -> failwith "Invalid output"
 
 let executeMove direction programState =
-    let cont1 = expectInput programState
-    let command = commands.[direction]
-    let output, cont2 = expectOutput (cont1 command)
-    outputToChar output, cont2
+    let output, newProgramState = 
+        programState
+        |> expectInput commands.[direction]
+        |> expectOutput
+    (outputToChar output, newProgramState)
 
 let exploreArea program =
     let area = Dictionary<int * int, char>()
@@ -37,11 +38,11 @@ let exploreArea program =
                 for direction in directions do
                     let targetPosition = move position direction
                     if not (area.ContainsKey targetPosition) then
-                        let c, cont2 = executeMove direction programState
+                        let c, newProgramState = executeMove direction programState
                         area.[targetPosition] <- c
                         if c = '.' || c = 'S' then
                             distances.[targetPosition] <- steps
-                            yield (targetPosition, cont2()) ]
+                            yield (targetPosition, newProgramState) ]
         if List.isEmpty newStates then
             area, distances
         else

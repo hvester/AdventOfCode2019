@@ -142,26 +142,24 @@ let runProgram inputs program =
             List.rev outputs, memory
     loop [] inputs (startProgram program)
 
-let expectInput = function
-    | WaitingForInput continuation -> continuation
-    | OutputtingValue _ -> failwith "Expected input, but got output"
+let expectInput input = function
+    | WaitingForInput continuation -> continuation input
+    | OutputtingValue (value, _) -> failwithf "Expected input, but got output: %i" value
     | Halted _ -> failwith "Expected input, but program halted"
  
 let expectOutput = function
     | WaitingForInput _ -> failwith "Expected output, but got input request"
-    | OutputtingValue (output, continuation) -> (output, continuation)
+    | OutputtingValue (output, continuation) -> (output, continuation ())
     | Halted _ -> failwith "Expected output, but program halted"
  
 let expectHalt = function
-    | WaitingForInput continuation -> failwith "Expected halt, but got input request"
-    | OutputtingValue _ -> failwith "Expected halt, but got output"
+    | WaitingForInput _ -> failwith "Expected halt, but got input request"
+    | OutputtingValue (value, _) -> failwithf "Expected halt, but got output: %i" value
     | Halted data -> data
 
 let expectManyInputs inputs programState =
     (programState, inputs)
-    ||> List.fold (fun state input ->
-        let continuation = expectInput state
-        continuation input)
+    ||> List.fold (fun state input -> expectInput input state)
 
 let runUntilInputOrHalt programState =
     let rec loop acc = function
