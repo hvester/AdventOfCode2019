@@ -25,5 +25,6 @@
     <Compile Include="Day21.fsx" />
     <Compile Include="Day24.fsx" />
     <Compile Include="Day22.fsx" />
+    <Compile Include="Day18.fs" />
   </ItemGroup>
 </Project>
