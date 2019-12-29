@@ -16,6 +16,7 @@
 
 #load "Day17.fsx"
 #load "Day18.fsx"
+#load "Day19.fsx"
 
 #load "Day21.fsx"
 
@@ -93,6 +94,9 @@ check Day17.result1 14332
 check Day17.result2 1034009L
 
 check Day18.result1 4620
+
+check Day19.result1 201
+check Day19.result2 6610984
 
 check Day21.result1 19362822
 check Day21.result2 1143625214
