@@ -103,6 +103,7 @@ check Day21.result1 19362822
 check Day21.result2 1143625214
 
 check Day23.result1 19473L
+check Day23.result2 12475L
 
 check Day24.result1 18350099
 check Day24.result2 2037
